@@ -4,6 +4,7 @@ import com.lawencon.leave_service.dto.AuthLoginRequest;
 import com.lawencon.leave_service.dto.AuthLoginResponse;
 import com.lawencon.leave_service.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +21,7 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public AuthLoginResponse login(@Valid @RequestBody AuthLoginRequest request) {
-    return authService.login(request);
+  public ResponseEntity<AuthLoginResponse> login(@Valid @RequestBody AuthLoginRequest request) {
+    return ResponseEntity.ok(authService.login(request));
   }
 }

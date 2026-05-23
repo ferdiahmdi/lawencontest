@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,30 +32,30 @@ public class ManagerLeaveController {
 
   @GetMapping
   @PreAuthorize("hasRole('MANAGER')")
-  public Page<LeaveResponse> listAllLeaves(
+  public ResponseEntity<Page<LeaveResponse>> listAllLeaves(
       @RequestParam(required = false) UUID employeeId,
       @RequestParam(required = false) LeaveStatus status,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
       Pageable pageable) {
-    return leaveService.listAllLeaves(employeeId, status, from, to, pageable);
+    return ResponseEntity.ok(leaveService.listAllLeaves(employeeId, status, from, to, pageable));
   }
 
   @PostMapping("/{id}/approve")
   @PreAuthorize("hasRole('MANAGER')")
-  public LeaveResponse approveLeave(
+  public ResponseEntity<LeaveResponse> approveLeave(
       @PathVariable UUID id,
       @RequestBody(required = false) LeaveDecisionRequest request,
       Authentication authentication) {
-    return leaveService.approveLeave(id, authentication.getName());
+    return ResponseEntity.ok(leaveService.approveLeave(id, authentication.getName()));
   }
 
   @PostMapping("/{id}/reject")
   @PreAuthorize("hasRole('MANAGER')")
-  public LeaveResponse rejectLeave(
+  public ResponseEntity<LeaveResponse> rejectLeave(
       @PathVariable UUID id,
       @RequestBody(required = false) LeaveDecisionRequest request,
       Authentication authentication) {
-    return leaveService.rejectLeave(id, authentication.getName());
+    return ResponseEntity.ok(leaveService.rejectLeave(id, authentication.getName()));
   }
 }
