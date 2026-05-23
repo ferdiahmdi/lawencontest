@@ -7,14 +7,13 @@ import java.util.Collection;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface LeaveRepository extends JpaRepository<Leave, UUID> {
+public interface LeaveRepository extends JpaRepository<Leave, UUID>, JpaSpecificationExecutor<Leave> {
     Page<Leave> findAllByEmployeeId(UUID employeeId, Pageable pageable);
 
-    boolean existsByEmployeeIdAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-            UUID employeeId,
-            Collection<LeaveStatus> statuses,
-            LocalDate endDate,
-            LocalDate startDate);
+    List<Leave> findAllByEmployeeIdAndStatusIn(UUID employeeId, Collection<LeaveStatus> statuses);
+
 }

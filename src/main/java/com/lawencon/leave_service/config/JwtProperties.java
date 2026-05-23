@@ -2,6 +2,7 @@ package com.lawencon.leave_service.config;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,5 +11,5 @@ import org.springframework.validation.annotation.Validated;
 public record JwtProperties(
     @NotBlank String issuer,
     @Min(60) long expirationSeconds,
-    @NotBlank String secret) {
+    @NotBlank @Size(min = 32) String secret) {
 }

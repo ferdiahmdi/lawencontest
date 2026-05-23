@@ -12,7 +12,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.convert.converter.Converter;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -35,6 +36,8 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/v3/api-docs").permitAll()
+            .requestMatchers("/swagger-ui/index.html").permitAll()
             .requestMatchers("/api/auth/login").permitAll()
             .anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2
@@ -71,7 +74,7 @@ public class SecurityConfig {
     return new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
   }
 
-  private Converter<Jwt, org.springframework.security.core.Authentication> jwtAuthenticationConverter() {
+  private Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
     JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
     authoritiesConverter.setAuthorityPrefix("ROLE_");
     authoritiesConverter.setAuthoritiesClaimName("roles");

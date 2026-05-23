@@ -9,6 +9,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -44,12 +46,12 @@ public class AuthService {
         .issuer(jwtProperties.issuer())
         .subject(authentication.getName())
         .issuedAt(now)
-        .expiresAt(now.plusSeconds(jwtProperties.expirationSeconds()))
         .claim("roles", roles)
         .build();
 
-    String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+    String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 
-    return new AuthLoginResponse(token, "Bearer", jwtProperties.expirationSeconds());
+    return new AuthLoginResponse(token, "Bearer");
   }
 }

@@ -1,0 +1,1 @@
+-- Mock data moved to Liquibase seed context.

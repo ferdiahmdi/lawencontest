@@ -1,0 +1,294 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-employees-and-leaves
+      author: copilot
+      changes:
+        - createTable:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quota
+                  type: integer
+                  defaultValueNumeric: 15
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - sql:
+            dbms: postgresql
+            sql: "ALTER TABLE employees ADD CONSTRAINT chk_employees_role CHECK (role IN ('EMPLOYEE','MANAGER'))"
+        - createTable:
+            tableName: leaves
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: employee_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: approved_by
+                  type: uuid
+                  constraints:
+                    nullable: true
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - sql:
+            dbms: postgresql
+            sql: "ALTER TABLE leaves ADD CONSTRAINT chk_leaves_status CHECK (status IN ('PENDING','APPROVED','REJECTED'))"
+        - addForeignKeyConstraint:
+            baseTableName: leaves
+            baseColumnNames: employee_id
+            constraintName: fk_leaves_employee
+            referencedTableName: employees
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: leaves
+            baseColumnNames: approved_by
+            constraintName: fk_leaves_approved_by
+            referencedTableName: employees
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - createIndex:
+            tableName: leaves
+            indexName: idx_leaves_employee_start
+            columns:
+              - column:
+                  name: employee_id
+              - column:
+                  name: start_date
+        - createIndex:
+            tableName: leaves
+            indexName: idx_leaves_status
+            columns:
+              - column:
+                  name: status
+  - changeSet:
+      id: 002-seed-employees
+      author: copilot
+      context: seed
+      changes:
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 7f9f2a3a-1e1b-4db1-9a1d-9e7c2b2a77a1
+              - column:
+                  name: username
+                  value: JohnManager
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: MANAGER
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 3b8e3c2a-1d5e-4f2a-9b6c-7a2c1d4e5f6a
+              - column:
+                  name: username
+                  value: NinaManager
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: MANAGER
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 0c6f00f7-3c9f-4a2a-9c6a-8b2e2c9c3b12
+              - column:
+                  name: username
+                  value: JaneEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: d2c4f0a2-7c64-4df3-8f7a-52b7c1e8f4a9
+              - column:
+                  name: username
+                  value: SamEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: a3b4c5d6-7890-4abc-8def-1234567890ab
+              - column:
+                  name: username
+                  value: LinaEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 4e2f1c3d-9b18-4b2f-8a7d-0a1c2b3d4e5f
+              - column:
+                  name: username
+                  value: OmarEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 5f6a7b8c-9d0e-4f1a-8b2c-3d4e5f607182
+              - column:
+                  name: username
+                  value: AvaEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 6a7b8c9d-0e1f-4a2b-8c3d-4e5f60718293
+              - column:
+                  name: username
+                  value: NoahEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
+        - insert:
+            tableName: employees
+            columns:
+              - column:
+                  name: id
+                  value: 8ce5399c-370c-434a-8247-3b22871d8fbf
+              - column:
+                  name: username
+                  value: MiaEmployee
+              - column:
+                  name: password_hash
+                  value: ""
+              - column:
+                  name: role
+                  value: EMPLOYEE
+              - column:
+                  name: quota
+                  valueNumeric: 15
