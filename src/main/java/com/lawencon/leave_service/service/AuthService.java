@@ -37,10 +37,13 @@ public class AuthService {
         new UsernamePasswordAuthenticationToken(request.username(), request.password()));
 
     Instant now = Instant.now();
+
+    System.out.println("HAI >>>>>>> " + authentication);
     List<String> roles = authentication.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .map(authority -> authority.startsWith("ROLE_") ? authority.substring(5) : authority)
         .toList();
+    System.out.println("HAI LAGI >>>>>>> " + roles);
 
     JwtClaimsSet claims = JwtClaimsSet.builder()
         .issuer(jwtProperties.issuer())

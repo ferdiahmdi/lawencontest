@@ -43,23 +43,25 @@ public class LeaveController {
   }
 
   @GetMapping
-  public ResponseEntity<Page<LeaveResponse>> listOwnLeaves(
+  public ResponseEntity<Page<LeaveResponse>> listLeaves(
       Authentication authentication,
       @RequestParam(required = false) UUID employeeId,
       @RequestParam(required = false) LeaveStatus status,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
       Pageable pageable) {
+
+    System.out.println("INI AUTH  >>>>>>>> " + authentication.getAuthorities());
 
     boolean isManager = authentication.getAuthorities().stream()
         .anyMatch(auth -> auth.getAuthority().equals("ROLE_MANAGER"));
 
     if (isManager) {
-      return ResponseEntity.ok(leaveService.listAllLeaves(employeeId, status, from, to, pageable));
-
+      return ResponseEntity.ok(leaveService.listAllLeaves(employeeId, status, startDate, endDate, pageable));
     }
 
-    return ResponseEntity.ok(leaveService.listOwnLeaves(authentication.getName(), status, from, to, pageable));
+    return ResponseEntity
+        .ok(leaveService.listOwnLeaves(authentication.getName(), status, startDate, endDate, pageable));
   }
 
   @PostMapping("/{id}/approve")

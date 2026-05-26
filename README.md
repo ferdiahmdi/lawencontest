@@ -1,11 +1,11 @@
 # Leave Service API
 
-A Spring Boot REST API for employee leave requests and manager approvals. It uses JWT auth (HS256), PostgreSQL, JPA, and Liquibase migrations.
+A Spring Boot REST API for employee leave requests and manager approvals. It uses PostgreSQL, JPA, and Liquibase migrations.
 
 ## Project Highlights
 
 - Spring Boot 4.0.6, Java 25
-- JWT-based auth with roles claim (EMPLOYEE, MANAGER)
+- JWT-based auth with roles claim (EMPLOYEE, MANAGER) -- only needed to get JWT tokens
 - Leave validation (date range, same-year, overlap, quota)
 - Liquibase migrations and optional seed data
 - OpenAPI UI via Springdoc
@@ -102,6 +102,12 @@ Base path: `/api`
 - `POST /leaves` (create a leave request)
 - `GET /leaves` (list own leaves)
 
+(ROLE_MANAGER)
+
+- `GET /leaves` (list all leaves)
+- `POST /leaves/{id}/approve`
+- `POST /leaves/{id}/reject`
+
 Query params for `GET /leaves`:
 
 - `status`: PENDING | APPROVED | REJECTED
@@ -109,13 +115,7 @@ Query params for `GET /leaves`:
 - `to`: yyyy-MM-dd
 - `page`, `size`, `sort` (Spring Page)
 
-### Manager (ROLE_MANAGER)
-
-- `GET /manager/leaves` (list all leaves)
-- `POST /manager/leaves/{id}/approve`
-- `POST /manager/leaves/{id}/reject`
-
-Query params for `GET /manager/leaves`:
+Query params for `GET /leaves`:
 
 - `employeeId`: UUID
 - `status`: PENDING | APPROVED | REJECTED
@@ -183,7 +183,8 @@ spring:
 
 ## OpenAPI
 
-- Swagger UI: `/swagger-ui/index.html`
+<!-- - Swagger UI: `/swagger-ui/index.html` -->
+
 - OpenAPI JSON: `/v3/api-docs`
 
 ## Common Dev Tasks

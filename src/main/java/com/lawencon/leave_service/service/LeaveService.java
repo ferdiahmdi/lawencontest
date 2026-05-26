@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,12 +35,13 @@ public class LeaveService {
   public LeaveResponse createLeave(String username, LeaveCreateRequest request) {
     Employee employee = findEmployee(username);
     validateDates(request.startDate(), request.endDate());
-    enforceSameYear(request.startDate(), request.endDate());
 
     boolean overlaps = leaveRepository.findAllByEmployeeIdAndStatusIn(employee.getId(), BLOCKING_STATUSES)
         .stream()
-        .anyMatch(existing -> overlaps(existing.getStartDate(), existing.getEndDate(),
-            request.startDate(), request.endDate()));
+        .anyMatch(existing -> {
+          return !existing.getStartDate().isAfter(request.endDate())
+              && !existing.getEndDate().isBefore(request.startDate());
+        });
     if (overlaps) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Leave overlaps existing request");
     }
@@ -62,23 +62,58 @@ public class LeaveService {
     return toResponse(leaveRepository.save(leave));
   }
 
-  public Page<LeaveResponse> listOwnLeaves(String username, LeaveStatus status, LocalDate from, LocalDate to,
+  public Page<LeaveResponse> listOwnLeaves(String username, LeaveStatus status, LocalDate startDate, LocalDate endDate,
       Pageable pageable) {
     Employee employee = findEmployee(username);
-    Specification<Leave> spec = baseFilter(employee.getId(), status, from, to);
-    return leaveRepository.findAll(spec, pageable).map(this::toResponse);
+    UUID employeeId = employee.getId();
+
+    if (status != null && startDate != null && endDate != null) {
+      return leaveRepository
+          .findAllByEmployeeIdAndStatusAndStartDateGreaterThanEqualAndEndDateLessThanEqual(
+              employeeId, status, startDate, endDate, pageable)
+          .map(this::toResponse);
+    }
+    if (status != null) {
+      return leaveRepository.findAllByEmployeeIdAndStatus(employeeId, status, pageable)
+          .map(this::toResponse);
+    }
+    if (startDate != null && endDate != null) {
+      return leaveRepository
+          .findAllByEmployeeIdAndStartDateGreaterThanEqualAndEndDateLessThanEqual(
+              employeeId, startDate, endDate, pageable)
+          .map(this::toResponse);
+    }
+
+    return leaveRepository.findAllByEmployeeId(employeeId, pageable).map(this::toResponse);
   }
 
-  public Page<LeaveResponse> listAllLeaves(UUID employeeId, LeaveStatus status, LocalDate from, LocalDate to,
+  public Page<LeaveResponse> listAllLeaves(UUID employeeId, LeaveStatus status, LocalDate startDate, LocalDate endDate,
       Pageable pageable) {
-    Specification<Leave> spec = baseFilter(employeeId, status, from, to);
-    return leaveRepository.findAll(spec, pageable).map(this::toResponse);
+    if (employeeId != null) {
+      Employee employee = employeeRepository.findById(employeeId)
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee Not Found"));
+      System.out.println("EMPLOYEE ID >>>>>>>>>> " + employee.getId());
+      return listOwnLeaves(employee.getUsername(), status, startDate, endDate, pageable);
+    }
+
+    if (status != null && startDate != null && endDate != null) {
+      return leaveRepository.findAllByStatusAndStartDateGreaterThanEqualAndEndDateLessThanEqual(
+          status, startDate, endDate, pageable).map(this::toResponse);
+    }
+    if (status != null) {
+      return leaveRepository.findAllByStatus(status, pageable).map(this::toResponse);
+    }
+    if (startDate != null && endDate != null) {
+      return leaveRepository.findAllByStartDateGreaterThanEqualAndEndDateLessThanEqual(
+          startDate, endDate, pageable).map(this::toResponse);
+    }
+
+    return leaveRepository.findAll(pageable).map(this::toResponse);
   }
 
   public LeaveResponse approveLeave(UUID leaveId, String managerUsername) {
     Leave leave = getLeave(leaveId);
     Employee manager = findEmployee(managerUsername);
-    ensureManager(manager);
 
     if (leave.getStatus() != LeaveStatus.PENDING) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Leave is not pending");
@@ -92,7 +127,6 @@ public class LeaveService {
   public LeaveResponse rejectLeave(UUID leaveId, String managerUsername) {
     Leave leave = getLeave(leaveId);
     Employee manager = findEmployee(managerUsername);
-    ensureManager(manager);
 
     if (leave.getStatus() != LeaveStatus.PENDING) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Leave is not pending");
@@ -113,19 +147,10 @@ public class LeaveService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Leave not found"));
   }
 
-  private void ensureManager(Employee manager) {
-    if (manager.getRole() != Role.MANAGER) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Manager role required");
-    }
-  }
-
   private void validateDates(LocalDate startDate, LocalDate endDate) {
     if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date range");
     }
-  }
-
-  private void enforceSameYear(LocalDate startDate, LocalDate endDate) {
     if (startDate.getYear() != endDate.getYear()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Leave must be within a single calendar year");
     }
@@ -141,29 +166,6 @@ public class LeaveService {
 
   private int countDays(LocalDate startDate, LocalDate endDate) {
     return Math.toIntExact(ChronoUnit.DAYS.between(startDate, endDate) + 1);
-  }
-
-  private boolean overlaps(LocalDate startA, LocalDate endA, LocalDate startB, LocalDate endB) {
-    return !startA.isAfter(endB) && !endA.isBefore(startB);
-  }
-
-  private Specification<Leave> baseFilter(UUID employeeId, LeaveStatus status, LocalDate from, LocalDate to) {
-    Specification<Leave> spec = (root, query, cb) -> cb.conjunction();
-
-    if (employeeId != null) {
-      spec = spec.and((root, query, cb) -> cb.equal(root.get("employee").get("id"), employeeId));
-    }
-    if (status != null) {
-      spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
-    }
-    if (from != null) {
-      spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("startDate"), from));
-    }
-    if (to != null) {
-      spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("endDate"), to));
-    }
-
-    return spec;
   }
 
   private LeaveResponse toResponse(Leave leave) {
